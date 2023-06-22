@@ -1,4 +1,16 @@
 const express = require('express');
+const {createUser} = require('../controller/userController');
+const {createBook, getBook, getBookByPathParam, updateBook,deleteBook} = require('../controller/bookController');
+const {reviews,updateReviews,deleteReview} = require('../controller/reviewController');
+const {auth,Authorisation,updateAuthorisation, hashpass} = require('../middleware/authMiddleware');
 const router = express.Router();
-
+router.post('/register', createUser);
+router.post('/books',createBook);
+router.get('/books', getBook);
+router.get('/books/:bookId', getBookByPathParam);
+router.put('/books/:bookId',auth,updateAuthorisation,updateBook);
+router.delete('/books/:bookId',auth,updateAuthorisation,deleteBook);
+router.post('/books/:bookId/review',reviews);
+router.put('/books/:bookId/review',updateReviews);
+router.delete('/books/:bookId/review',deleteReview);
 module.exports = router;
