@@ -10,20 +10,21 @@ const isValid = function (value) {
 
 const createReview = async function (req, res) {
     try {
-        const data = req.body;
-        const bookId = req.param.bookId;
-        const { review, rating, reviewedBy } = data;
-
+        let data = req.body;
+        const bookId = req.params.bookId;
+        let { review, rating, reviewedBy } = data
+        // data.bookId = bookId;
+        console.log(bookId);
         if (!bookId) {
             return res.status(400).send({ status: false, message: "please provide book id." });
         }
 
-        if (!ObjectId.isValid(bookId)) {
+        if (!isValidObjectId(bookId)) {
             return res.status(400).send({ status: false, message: "Invalid book id." });
         }
 
         const checkBook = await Book.findOne({ _id: bookId, isDeleted: false });
-
+        console.log(checkBook);
         if (!checkBook) {
             return res.status(404).send({ status: false, message: "Book id does not exist in database." });
         }
@@ -34,10 +35,6 @@ const createReview = async function (req, res) {
 
         if (!isValid(review)) {
             return res.status(400).send({ status: false, message: "review can't be empty." });
-        }
-
-        if (!isValid(reviewedBy)) {
-            return res.status(400).send({ status: false, message: "reviewer name is invalid." });
         }
 
         const reviewData = await Review.create(data);
@@ -55,10 +52,9 @@ const createReview = async function (req, res) {
             { _id: bookId },
             { $inc: { reviews: 1 } }
         );
-        return res.status(201).send({ status: true, message: "Success", data: result });
-
-    } catch (error) {
-
+        return res.status(201).send({ status: true, message: "Success", data: { reviewsData: result } });
+    } catch (err) {
+        return res.status(500).send({ status: false, message: err.message });
     }
 }
 
@@ -68,23 +64,24 @@ const createReview = async function (req, res) {
 //update review
 const updateReview = async function (req, res) {
     try {
-        const reviewId = req.params.reviewId;
-        const bookId = req.params.bookId;
+        let data = req.params;
+        let { bookId, reviewId } = data;
 
         let body = req.body;
         let { reviewedBy, review, rating } = body;
 
-        if (!ObjectId.isValid(bookId) || !ObjectId.isValid(reviewId)) {
+
+
+        if (!isValidObjectId(bookId) || !isValidObjectId(reviewId)) {
             return res.status(400).send({ status: false, message: "Invalid Book ID OR Invalid Review ID" });
         }
 
-        // Check if the bookId exists and is not deleted before updating the review.
-        const findBookDetail = await Book.findOne({ _id: bookId, isDeleted: false });
-        if (!findBookDetail) {
-            return res.status(400).send({ status: false, message: "This book ID is not exist or might be deleted." })
+        let checkExits = await Book.findOne({ _id: bookId, isDeleted: false });
+
+        if (!checkExits) {
+            return res.status(404).send({ status: false, message: "This book ID is not exist or might be deleted." });
         }
 
-        // Check if the review exist before updating the review.
         let checkReview = await Review.findOne({ _id: reviewId, isDeleted: false });
 
         if (!checkReview) {
@@ -107,7 +104,6 @@ const updateReview = async function (req, res) {
             if (!isValid(reviewedBy)) {
                 return res.status(400).send({ status: false, message: "reviewedBy is not valid." });
             }
-
             updateData['reviewedBy'] = reviewedBy;
         }
 
@@ -136,8 +132,8 @@ const updateReview = async function (req, res) {
         ).select({ __v: 0, createdAt: 0, updatedAt: 0, isDeleted: 0 });
 
         return res.status(200).send({ status: true, message: "Success", data: updateReview });
-    } catch (error) {
-
+    } catch (err) {
+        return res.status(500).send({ status: false, message: err.message });
     }
 }
 
@@ -151,7 +147,7 @@ const deleteReview = async function (req, res) {
         let data = req.params;
         let { bookId, reviewId } = data;
 
-        if (!ObjectId.isValid(bookId) || !ObjectId.isValid(reviewId)) {
+        if (!isValidObjectId(bookId) || !isValidObjectId(reviewId)) {
             return res.status(400).send({ status: false, message: "Invalid Book ID or Invalid Review ID" });
         }
 
@@ -185,6 +181,7 @@ const deleteReview = async function (req, res) {
 
         return res.status(200).send({ status: true, message: "Successfully Deleted." });
     } catch (error) {
-
+        return res.status(500).send({ status: false, message: error.message });
     }
 }
+module.exports = { createReview, updateReview, deleteReview };
